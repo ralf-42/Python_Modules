@@ -7,7 +7,7 @@ Diese Bibliothek stellt Hilfsmittel und Funktionen für den Kurs **"Generative K
 Die Bibliothek ist für die Installation in Google Colab-Umgebungen optimiert:
 
 ```bash
-!uv pip install -q git+https://github.com/ralf-42/genai_lib
+!uv pip install -q git+https://github.com/ralf-42/Python_modules
 ```
 
 Nach der Installation können die Module importiert werden:
@@ -92,13 +92,16 @@ python genai_lib/llm_basics.py          # LLM-Modellattribute anzeigen
 ## 7. 📁 Dateiorganisation
 
 ```
-genai_lib/
-├── __init__.py          # Leerer Modul-Initializer
-├── utilities.py         # Kern-Utilities (258 Zeilen)
-├── llm_basics.py        # LLM-Setup-Funktionen (39 Zeilen)  
-├── chromadb_statistics.py # ChromaDB-Analyse-Tool (1038 Zeilen)
-├── prepare_prompt.py    # PREPARE-Framework (30 Zeilen)
-└── show_md.py          # Display-Utilities (61 Zeilen)
+Python_modules/
+├── genai_lib/
+│   ├── __init__.py          # Leerer Modul-Initializer
+│   ├── utilities.py         # Kern-Utilities (258 Zeilen)
+│   ├── llm_basics.py        # LLM-Setup-Funktionen (39 Zeilen)  
+│   ├── chromadb_statistics.py # ChromaDB-Analyse-Tool (1038 Zeilen)
+│   ├── prepare_prompt.py    # PREPARE-Framework (30 Zeilen)
+│   └── show_md.py          # Display-Utilities (61 Zeilen)
+├── README.md
+└── setup.py
 ```
 
 ## 8. 📄 Lizenz
