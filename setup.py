@@ -1,4 +1,4 @@
-import os
+import os, sys
 from setuptools import setup, find_packages
 
 def read_requirements():
