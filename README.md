@@ -1,4 +1,4 @@
-# 🤖 GenAI Lib - Kursbibliothek Generative KI
+# 🤖 Kursbibliothek Generative KI und ML
 
 Diese Bibliothek stellt Hilfsmittel und Funktionen für den Kurs **"Generative KI"** bereit. Sie erleichtert Teilnehmer:innen den Einstieg und die praktische Anwendung generativer KI-Technologien in Google Colab-Umgebungen.
 
@@ -95,14 +95,35 @@ python genai_lib/llm_basics.py          # LLM-Modellattribute anzeigen
 Python_modules/
 ├── genai_lib/
 │   ├── __init__.py          # Leerer Modul-Initializer
-│   ├── utilities.py         # Kern-Utilities (258 Zeilen)
-│   ├── llm_basics.py        # LLM-Setup-Funktionen (39 Zeilen)  
-│   ├── chromadb_statistics.py # ChromaDB-Analyse-Tool (1038 Zeilen)
-│   ├── prepare_prompt.py    # PREPARE-Framework (30 Zeilen)
-│   └── show_md.py          # Display-Utilities (61 Zeilen)
+│   ├── utilities.py         # Kern-Utilities
+│   ├── llm_basics.py        # LLM-Setup-Funktionen
+│   ├── chromadb_statistics.py # ChromaDB-Analyse-Tool
+│   ├── prepare_prompt.py    # PREPARE-Framework
+│   └── show_md.py          # Display-Utilities
+├── ml_lib/                  # Zusätzliches Modul (nicht Teil der Installation)
+│   ├── __init__.py
+│   └── utilities.py         # ML-spezifische Utilities
 ├── README.md
+├── requirements.txt
 └── setup.py
 ```
+
+### Ignorierte Dateien und Verzeichnisse
+
+Die folgenden Dateien und Verzeichnisse werden durch `.gitignore` und `.claudeignore` von der Versionskontrolle ausgeschlossen:
+
+**Python-spezifisch:**
+- `__pycache__/`, `*.pyc` - Python-Bytecode
+- `*.egg-info/`, `.pytest_cache/` - Build- und Test-Artefakte
+- `.ipynb_checkpoints/` - Jupyter Notebook Checkpoints
+- `.venv/`, `venv/` - Virtuelle Umgebungen
+
+**Projektspezifisch:**
+- `_misc/` - Verschiedene Hilfsdateien
+- `.tmp.drivedownload`, `.tmp.driveupload` - Temporäre Drive-Dateien
+- `*.pptx`, `*.png`, `*.jpeg` - Präsentationen und Bilder
+- `.obsidian/` - Obsidian-Notizen
+- `CLAUDE.md` - Claude Code Projektanweisungen
 
 ## 8. 📄 Lizenz
 
