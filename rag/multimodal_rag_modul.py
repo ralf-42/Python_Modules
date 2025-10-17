@@ -46,7 +46,7 @@ class RAGConfig:
     text_model: str = 'text-embedding-3-small'
     llm_model: str = 'gpt-4o-mini'
     vision_model: str = 'gpt-4o-mini'
-    db_path: str = './multimodal_rag_db_enhanced'
+    db_path: str = './multimodal_rag_db'
 
 
 @dataclass
@@ -659,32 +659,8 @@ def get_system_status(components):
     }
 
 
-def cleanup_database(db_path='./multimodal_rag_db_enhanced'):
+def cleanup_database(db_path='./multimodal_rag_db'):
     """Löscht die Datenbank komplett"""
     if Path(db_path).exists():
         shutil.rmtree(db_path)
         print(f"🗑️ Datenbank gelöscht: {db_path}")
-
-
-# ============================================================================
-# MAIN
-# ============================================================================
-
-if __name__ == "__main__":
-    print("="*70)
-    print("M14a - Standalone Multimodales RAG mit Bildbeschreibungen")
-    print("="*70)
-    print("\n✅ Modul geladen - keine Abhängigkeiten zu M14.ipynb\n")
-    print("Verfügbare Funktionen:")
-    print("  • init_rag_system_enhanced()        - System initialisieren")
-    print("  • generate_image_description()       - Einzelne Bildbeschreibung")
-    print("  • add_text_document()                - Text-Dokument hinzufügen")
-    print("  • add_image_with_description()       - Bild mit Beschreibung")
-    print("  • process_directory()                - Verzeichnis verarbeiten")
-    print("  • search_texts()                     - Text-Suche")
-    print("  • search_images()                    - Bild-Suche (CLIP)")
-    print("  • find_related_images_from_text()    - Cross-Modal-Retrieval")
-    print("  • multimodal_search()                - Kombinierte Suche")
-    print("  • get_system_status()                - System-Status")
-    print("  • cleanup_database()                 - Datenbank löschen")
-    print("\n" + "="*70)
