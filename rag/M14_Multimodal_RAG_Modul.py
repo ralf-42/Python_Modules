@@ -1,10 +1,7 @@
 """
-M14a - Standalone Multimodales RAG mit Bildbeschreibungen
-Vollständig eigenständige Version - benötigt KEIN M14.ipynb
+M14 - Multimodales RAG Modul mit Bildbeschreibungen
 
 Verwendung:
-    from M14a_standalone import *
-
     # System initialisieren
     rag = init_rag_system_enhanced()
 
