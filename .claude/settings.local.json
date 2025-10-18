@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:docs.llamaindex.ai)",
+      "WebFetch(domain:developers.llamaindex.ai)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

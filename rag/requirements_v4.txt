@@ -1,0 +1,28 @@
+# Requirements für Multimodal RAG Modul V4 (LlamaIndex-basiert)
+
+# LlamaIndex Core
+llama-index>=0.11.0
+llama-index-core>=0.11.0
+
+# Vector Stores
+llama-index-vector-stores-chroma>=0.2.0
+chromadb>=0.5.0
+
+# Embeddings
+llama-index-embeddings-openai>=0.2.0
+llama-index-embeddings-clip>=0.2.0
+
+# LLMs
+llama-index-llms-openai>=0.2.0
+llama-index-multi-modal-llms-openai>=0.2.0
+
+# OpenAI API
+openai>=1.0.0
+
+# Image Processing
+Pillow>=10.0.0
+clip-anytorch>=0.1.0  # Für CLIP-Embeddings
+
+# Additional Dependencies
+sentence-transformers>=2.2.0
+torch>=2.0.0  # Für CLIP
