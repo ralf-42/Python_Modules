@@ -1,5 +1,6 @@
+#@title 🛠️ Code M14_Modul { display-mode: "form" }
 """
-M14 - Multimodales RAG Modul mit Bildbeschreibungen
+Multimodales RAG Modul mit Bildbeschreibungen (Version 3)
 
 Verwendung:
     # System initialisieren
@@ -11,8 +12,15 @@ Verwendung:
     # Suchen
     result = multimodal_search(rag, "Roboter")
 
+    # NEU: Bild → Bild Suche
+    similar_images = search_similar_images(rag, "./query_image.jpg", k=5)
+
+    # NEU: Bild → Text Suche
+    text_results = search_text_by_image(rag, "./query_image.jpg", k=3)
+
 Autor: Enhanced by Claude
 Datum: Oktober 2025
+Version: 3.0 - Neue Features: Bild → Bild Suche, Bild → Text Suche
 """
 
 from pathlib import Path
@@ -22,7 +30,7 @@ import shutil
 from dataclasses import dataclass
 
 from markitdown import MarkItDown
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
@@ -407,10 +415,10 @@ def search_texts(components, query, k=3, include_image_descriptions=True):
     if not docs_with_scores:
         return "❌ Keine relevanten Dokumente gefunden"
 
-    # Score in Ähnlichkeit umwandeln
+    # FIX 1: Score in Ähnlichkeit umwandeln (ChromaDB liefert L2-Distanz: 0=identisch, 2=maximal entfernt)
     docs_with_similarity = []
     for doc, score in docs_with_scores:
-        similarity = max(0, min(1, 2.0 / (1 + score)))
+        similarity = max(0, 1 - (score / 2))  # Konvertiere Distanz zu Ähnlichkeit
         docs_with_similarity.append((doc, similarity))
 
     # Nach Ähnlichkeit sortieren
@@ -570,6 +578,217 @@ def find_related_images_from_text(components, text_doc_ids, k=3):
     return related_images[:k]
 
 
+def search_similar_images(components, query_image_path, k=5):
+    """
+    Bild → Bild Suche: Findet visuell ähnliche Bilder in der Datenbank
+
+    Args:
+        components: RAG-System-Komponenten
+        query_image_path: Pfad zum Query-Bild
+        k: Anzahl ähnlicher Bilder
+
+    Returns:
+        Liste von ähnlichen Bildern mit Metadaten und Ähnlichkeitswerten
+    """
+    path = Path(query_image_path)
+
+    if not path.exists():
+        print(f"❌ Query-Bild nicht gefunden: {query_image_path}")
+        return []
+
+    if components.image_collection.count() == 0:
+        print("❌ Keine Bilder in der Datenbank")
+        return []
+
+    try:
+        # Query-Bild laden und CLIP-Embedding erstellen
+        image = Image.open(path).convert('RGB')
+        query_embedding = components.clip_model.encode(image).tolist()
+        print(f"🔍 CLIP-Embedding erstellt für Query-Bild: {path.name}")
+
+        # Suche in Bild-Collection
+        results = components.image_collection.query(
+            query_embeddings=[query_embedding],
+            n_results=min(k, components.image_collection.count()),
+            include=['documents', 'metadatas', 'distances']
+        )
+
+        if not results['ids'][0]:
+            return []
+
+        # Ergebnisse formatieren
+        similar_images = [
+            {
+                "filename": metadata.get("filename", "Unbekannt"),
+                "path": metadata.get("source", ""),
+                "description": metadata.get("description", ""),
+                "similarity": round(max(0, 1 - distance), 3)
+            }
+            for distance, metadata in zip(results['distances'][0], results['metadatas'][0])
+        ]
+
+        print(f"✅ {len(similar_images)} ähnliche Bilder gefunden\n")
+        return similar_images
+
+    except Exception as e:
+        print(f"❌ Fehler bei Bild-zu-Bild-Suche: {e}")
+        return []
+
+
+def search_text_by_image(components, query_image_path, k=3, k_text=3):
+    """
+    Bild → Text Suche: Findet ähnliche Bilder und relevante Text-Dokumente
+
+    Kombiniert:
+    1. Visuelle Ähnlichkeitssuche (Bild → Bild via CLIP)
+    2. Semantische Textsuche basierend auf Bildbeschreibungen
+
+    Args:
+        components: RAG-System-Komponenten
+        query_image_path: Pfad zum Query-Bild
+        k: Anzahl ähnlicher Bilder
+        k_text: Anzahl relevanter Text-Dokumente
+
+    Returns:
+        Formatierter String mit Bildern und Text-Dokumenten
+    """
+    path = Path(query_image_path)
+
+    if not path.exists():
+        return f"❌ Query-Bild nicht gefunden: {query_image_path}"
+
+    print(f"\n{'='*70}")
+    print(f"🔍 Bild → Text Suche für: {path.name}")
+    print(f"{'='*70}\n")
+
+    # 1. Ähnliche Bilder finden
+    similar_images = search_similar_images(components, query_image_path, k)
+
+    if not similar_images:
+        return "❌ Keine ähnlichen Bilder gefunden"
+
+    # 2. Bildbeschreibungen aus text_collection holen
+    image_descriptions = []
+    for img in similar_images:
+        img_path = img.get('path', '')
+        if img_path:
+            try:
+                text_docs = components.text_collection.get(
+                    where={
+                        "$and": [
+                            {"source": img_path},
+                            {"doc_type": "image_description"}
+                        ]
+                    }
+                )
+                if text_docs['ids']:
+                    image_descriptions.append({
+                        'content': text_docs['documents'][0],
+                        'metadata': text_docs['metadatas'][0],
+                        'similarity': img['similarity']
+                    })
+            except Exception as e:
+                print(f"⚠️ Fehler beim Abrufen der Beschreibung für {img.get('filename', 'Unbekannt')}: {e}")
+                continue
+
+    if not image_descriptions:
+        return "❌ Keine Textbeschreibungen für ähnliche Bilder gefunden"
+
+    # 3. Semantische Textsuche basierend auf Bildbeschreibungen
+    # Erstelle Suchquery aus den Bildbeschreibungen
+    search_query = " ".join([desc['content'] for desc in image_descriptions[:2]])
+
+    print(f"🔍 Suche nach relevanten Text-Dokumenten basierend auf Bildbeschreibungen...")
+
+    # Suche Text-Dokumente (nicht Bildbeschreibungen)
+    try:
+        docs_with_scores = components.text_collection.similarity_search_with_score(
+            search_query,
+            k=k_text * 2
+        )
+
+        # Filtere nur echte Text-Dokumente (keine Bildbeschreibungen)
+        text_documents = []
+        for doc, score in docs_with_scores:
+            if doc.metadata.get('doc_type') == 'text_document':
+                similarity = max(0, 1 - (score / 2))
+                if similarity >= 0.3:  # Mindest-Ähnlichkeit
+                    text_documents.append({
+                        'content': doc.page_content,
+                        'filename': doc.metadata.get('filename', 'Unbekannt'),
+                        'similarity': round(similarity, 3)
+                    })
+                    if len(text_documents) >= k_text:
+                        break
+
+        print(f"✅ {len(text_documents)} relevante Text-Dokumente gefunden\n")
+
+    except Exception as e:
+        print(f"⚠️ Fehler bei Textsuche: {e}")
+        text_documents = []
+
+    # 4. LLM-Zusammenfassung generieren
+    try:
+        # Kontext für Bilder
+        image_context_parts = []
+        for desc in image_descriptions:
+            image_context_parts.append(
+                f"Bild: {desc['metadata'].get('filename', 'Unbekannt')} "
+                f"(Ähnlichkeit: {desc['similarity']})\n{desc['content']}"
+            )
+
+        image_context = "\n\n---\n\n".join(image_context_parts)
+
+        # Kontext für Text-Dokumente
+        text_context = ""
+        if text_documents:
+            text_context_parts = [
+                f"Dokument: {doc['filename']} (Ähnlichkeit: {doc['similarity']})\n{doc['content'][:500]}"
+                for doc in text_documents
+            ]
+            text_context = "\n\n---\n\n".join(text_context_parts)
+
+        # Prompt für LLM
+        prompt = f"""Du hast ein Query-Bild erhalten. Basierend auf visueller Ähnlichkeit und semantischer Suche wurden folgende Informationen gefunden.
+
+VISUELL ÄHNLICHE BILDER UND IHRE BESCHREIBUNGEN:
+{image_context}
+
+{'RELEVANTE TEXT-DOKUMENTE:' if text_documents else '(Keine relevanten Text-Dokumente gefunden)'}
+{text_context if text_documents else ''}
+
+AUFGABE:
+Erstelle eine prägnante Zusammenfassung der wichtigsten Informationen, die zum Query-Bild passen.
+Beschreibe Gemeinsamkeiten, wichtige Merkmale und relevante Kontextinformationen aus den Texten."""
+
+        response = components.llm.invoke(prompt).content
+
+        # Formatierte Ausgabe
+        result = f"📄 ZUSAMMENFASSUNG (Bild → Text):\n{'-'*70}\n{response}\n\n"
+
+        # Bild-Quellen
+        result += f"🖼️ GEFUNDENE ÄHNLICHE BILDER ({len(similar_images)}):\n{'-'*70}\n"
+        for i, img in enumerate(similar_images, 1):
+            result += f"   {i}. {img['filename']} (Ähnlichkeit: {img['similarity']})\n"
+            if img['description']:
+                result += f"      📝 {img['description'][:300]}...\n"
+
+        # Text-Quellen
+        if text_documents:
+            result += f"\n📚 RELEVANTE TEXT-DOKUMENTE ({len(text_documents)}):\n{'-'*70}\n"
+            for i, doc in enumerate(text_documents, 1):
+                result += f"   {i}. {doc['filename']} (Ähnlichkeit: {doc['similarity']})\n"
+                result += f"      📄 {doc['content'][:200]}...\n"
+        else:
+            result += f"\n📚 Keine relevanten Text-Dokumente gefunden.\n"
+
+        return result
+
+    except Exception as e:
+        print(f"❌ Fehler bei Textgenerierung: {e}")
+        return f"❌ Fehler bei der Verarbeitung: {e}"
+
+
 def multimodal_search(components, query, k_text=3, k_images=3, enable_cross_modal=True):
     """
     Führt erweiterte multimodale Suche durch
@@ -593,24 +812,119 @@ def multimodal_search(components, query, k_text=3, k_images=3, enable_cross_moda
     print(f"🔍 Multimodale Suche: {query}")
     print(f"{'='*70}\n")
 
-    # 1. Text-Suche (inkl. Bildbeschreibungen)
-    text_results = search_texts(components, query, k_text, include_image_descriptions=True)
+    # FIX 3: Text-Suche nur EINMAL durchführen und Ergebnisse wiederverwenden
+    docs_with_scores = components.text_collection.similarity_search_with_score(query, k=k_text*2)
+
+    # Konvertiere Scores zu Ähnlichkeiten
+    docs_with_similarity = []
+    for doc, score in docs_with_scores:
+        similarity = max(0, 1 - (score / 2))
+        docs_with_similarity.append((doc, similarity))
+
+    docs_with_similarity.sort(key=lambda x: x[1], reverse=True)
+
+    # Filtern nach Mindest-Ähnlichkeit
+    min_similarity = 0.3
+    relevant_docs = [(doc, sim) for doc, sim in docs_with_similarity[:k_text]
+                     if sim >= min_similarity]
+
+    # 1. Text-Ergebnisse formatieren (ohne nochmalige Suche)
+    if not relevant_docs:
+        text_results = "❌ Keine ausreichend ähnlichen Dokumente gefunden"
+    else:
+        # Dokumente nach Typ trennen
+        text_docs = []
+        image_desc_docs = []
+
+        for doc, sim in relevant_docs:
+            doc_type = doc.metadata.get("doc_type", "text_document")
+            if doc_type == "image_description":
+                image_desc_docs.append((doc, sim))
+            elif doc_type == "text_document":
+                text_docs.append((doc, sim))
+
+        # Kontext für LLM zusammenstellen
+        all_docs = text_docs + image_desc_docs
+        context = "\n\n---\n\n".join([doc.page_content for doc, _ in all_docs])
+
+        # Quellen sammeln
+        sources = [
+            {
+                "filename": doc.metadata.get("filename", "Unbekannt"),
+                "similarity": round(sim, 3),
+                "type": doc.metadata.get("doc_type", "text_document"),
+                "image_doc_id": doc.metadata.get("image_doc_id")
+            }
+            for doc, sim in all_docs
+        ]
+
+        # LLM-Antwort generieren
+        prompt = f"""Beantworte die Frage präzise basierend auf dem Kontext.
+
+KONTEXT:
+{context}
+
+FRAGE: {query}
+
+ANTWORT:"""
+
+        response = components.llm.invoke(prompt).content
+
+        # Ausgabe mit separaten Quellenlisten
+        text_sources = [s for s in sources if s['type'] == 'text_document']
+        image_sources = [s for s in sources if s['type'] == 'image_description']
+
+        text_results = response
+
+        if text_sources:
+            text_results += f"\n\n📚 Text-Quellen ({len(text_sources)}): " + "\n".join([
+                f"   • {src['filename']} (Ähnlichkeit: {src['similarity']})"
+                for src in text_sources
+            ])
+
+        if image_sources:
+            text_results += f"\n\n🖼️ Relevante Bilder ({len(image_sources)}): " + "\n".join([
+                f"   • {src['filename']} (Ähnlichkeit: {src['similarity']})"
+                for src in image_sources
+            ])
 
     # 2. Direkte Bild-Suche über CLIP
     image_results = search_images(components, query, k_images)
 
-    # 3. Cross-Modal-Retrieval
+    # 3. Cross-Modal-Retrieval (FIX 2: N+1 Query Problem behoben)
     cross_modal_images = []
-    if enable_cross_modal:
-        docs_with_scores = components.text_collection.similarity_search_with_score(query, k=k_text*2)
-        image_desc_ids = [
-            components.text_collection.get(where={"source": doc.metadata['source']})['ids'][0]
-            for doc, _ in docs_with_scores
+    if enable_cross_modal and docs_with_scores:
+        # FIX 2: IDs direkt aus docs_with_scores extrahieren statt zusätzliche get() Calls
+        image_desc_docs_for_retrieval = [
+            (doc, sim) for doc, sim in docs_with_similarity
             if doc.metadata.get('doc_type') == 'image_description'
         ]
 
-        if image_desc_ids:
-            cross_modal_images = find_related_images_from_text(components, image_desc_ids, k_images)
+        if image_desc_docs_for_retrieval:
+            # Extrahiere image_doc_ids direkt aus den Metadaten
+            image_doc_ids = [
+                doc.metadata.get('image_doc_id')
+                for doc, _ in image_desc_docs_for_retrieval
+                if doc.metadata.get('image_doc_id')
+            ]
+
+            # Hole Bilder für diese IDs (ein einziger Batch-Call statt N einzelne)
+            if image_doc_ids:
+                try:
+                    image_data = components.image_collection.get(ids=image_doc_ids)
+
+                    for img_id, img_metadata in zip(image_data['ids'], image_data['metadatas']):
+                        cross_modal_images.append({
+                            'filename': img_metadata.get('filename', 'Unbekannt'),
+                            'path': img_metadata.get('source', ''),
+                            'description': img_metadata.get('description', ''),
+                            'source': 'cross_modal_retrieval'
+                        })
+                except Exception as e:
+                    print(f"⚠️ Fehler beim Cross-Modal-Retrieval: {e}")
+
+            # Limitiere auf k_images
+            cross_modal_images = cross_modal_images[:k_images]
 
     # Ergebnisse zusammenfassen
     result = f"📄 TEXT-ERGEBNISSE:\n{'-'*70}\n{text_results}\n\n"
