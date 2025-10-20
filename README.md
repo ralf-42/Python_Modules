@@ -14,8 +14,8 @@ Nach der Installation können die Module importiert werden:
 
 ```python
 from genai_lib.utilities import setup_api_keys, install_packages
-from genai_lib.llm_basics import setup_ChatOpenAI
 from genai_lib.show_md import show_title, show_info
+from genai_lib.prepare_prompt import prepare
 ```
 
 ## 2. 🏗️ Architektur und Module
@@ -23,8 +23,6 @@ from genai_lib.show_md import show_title, show_info
 Die Bibliothek besteht aus modularen Hilfsdateien im `genai_lib/` Verzeichnis:
 
 - **`utilities.py`** - Kernfunktionen für Umgebungssetup, API-Schlüssel-Verwaltung, Paketinstallation und Antwortverarbeitung
-- **`llm_basics.py`** - Grundlegende LLM-Setup-Funktionen, hauptsächlich für ChatOpenAI-Konfiguration
-- **`chromadb_statistics.py`** - Umfassende ChromaDB-Analyse und Statistik-Modul mit detaillierter Collection-Analytik
 - **`prepare_prompt.py`** - PREPARE-Framework-Implementierung für strukturierte Prompt-Entwicklung
 - **`show_md.py`** - Jupyter Notebook Display-Utilities für formatierte Markdown-Ausgabe
 
@@ -43,22 +41,22 @@ Eine vollständige Liste der Abhängigkeiten finden Sie in der `requirements.txt
 
 ## 4. 🚀 Wichtige Funktionen
 
-### API-Schlüssel-Verwaltung
+### API-Schlüssel-Verwaltung (`utilities.py`)
 - `setup_api_keys()` - Richtet API-Schlüssel aus Google Colab userdata für OpenAI, Anthropic, Hugging Face ein
 - `install_packages()` - Installiert automatisch benötigte Pakete, falls nicht verfügbar
-
-### ChromaDB-Analyse
-Das `chromadb_statistics.py` Modul bietet umfassende Datenbankanalyse:
-- `display_chromadb_statistics()` - Vollständige Datenbankstatistik-Übersicht
-- `analyze_collection()` - Detaillierte Analyse einzelner Collections
-- `get_collection_chunks()` - Abrufen und Untersuchen einzelner Chunks
-- Interaktives CLI-Menü mit über 10 Analyseoptionen
-
-### LLM-Utilities
-- `setup_ChatOpenAI()` - Schnelles ChatOpenAI-Setup mit Standardparametern (gpt-4o-mini, temp=0.0)
 - `process_response()` - Strukturierte Informationen aus LLM-Antworten extrahieren inkl. Token-Verwendung
 
-### Display-Utilities
+### PREPARE-Framework (`prepare_prompt.py`)
+- `prepare()` - Strukturierte Prompt-Entwicklung nach dem PREPARE-Framework
+  - **P**arameter definieren
+  - **R**olle festlegen
+  - **E**rgebnis beschreiben
+  - **P**rozess strukturieren
+  - **A**usgabeformat definieren
+  - **R**egeln und Einschränkungen
+  - **E**xempel bereitstellen
+
+### Display-Utilities (`show_md.py`)
 - `mprint()` / `show_md()` - Markdown-Anzeige in Notebooks
 - `show_title()`, `show_info()`, `show_warning()`, `show_success()` - Formatierte Benachrichtigungsfunktionen
 
@@ -66,10 +64,22 @@ Das `chromadb_statistics.py` Modul bietet umfassende Datenbankanalyse:
 
 Typische Verwendung in Google Colab-Lernumgebungen:
 
-1. Installation über uv pip in Colab
-2. Import der Utilities: `from genai_lib.utilities import setup_api_keys, install_packages`
-3. Umgebungssetup mit `setup_api_keys(["OPENAI_API_KEY", "ANTHROPIC_API_KEY"])`
-4. Verwendung der Module für Kursübungen mit LangChain und ChromaDB
+```python
+# 1. Installation über uv pip in Colab
+!uv pip install -q git+https://github.com/ralf-42/Python_modules
+
+# 2. Import der Utilities
+from genai_lib.utilities import setup_api_keys, install_packages
+from genai_lib.show_md import show_title, show_info
+from genai_lib.prepare_prompt import prepare
+
+# 3. Umgebungssetup
+setup_api_keys(["OPENAI_API_KEY", "ANTHROPIC_API_KEY"])
+
+# 4. Verwendung der Module
+show_title("Mein GenAI Projekt")
+show_info("Dies ist eine Beispielinfo")
+```
 
 ## 6. 🛠️ Entwicklung
 
@@ -83,47 +93,54 @@ python setup.py sdist bdist_wheel
 ```
 
 ### Modulausführung
-Einzelne Module können direkt ausgeführt werden:
+Module können einzeln getestet werden:
 ```bash
-python genai_lib/chromadb_statistics.py  # Interaktives ChromaDB-Analyse-Tool
-python genai_lib/llm_basics.py          # LLM-Modellattribute anzeigen
+python -m genai_lib.utilities     # Utilities testen
+python -m genai_lib.show_md       # Display-Funktionen testen
 ```
 
 ## 7. 📁 Dateiorganisation
 
 ```
 Python_modules/
-├── genai_lib/
-│   ├── __init__.py          # Leerer Modul-Initializer
-│   ├── utilities.py         # Kern-Utilities
-│   ├── llm_basics.py        # LLM-Setup-Funktionen
-│   ├── chromadb_statistics.py # ChromaDB-Analyse-Tool
-│   ├── prepare_prompt.py    # PREPARE-Framework
-│   └── show_md.py          # Display-Utilities
-├── ml_lib/                  # Zusätzliches Modul (nicht Teil der Installation)
-│   ├── __init__.py
+├── genai_lib/               # Hauptpaket für Generative KI
+│   ├── __init__.py          # Modul-Initializer
+│   ├── utilities.py         # Kern-Utilities (API-Keys, Paketinstallation, etc.)
+│   ├── prepare_prompt.py    # PREPARE-Framework für Prompt Engineering
+│   └── show_md.py          # Display-Utilities für Jupyter Notebooks
+├── ml_lib/                  # Zusätzliches Modul für Machine Learning
+│   ├── __init__.py          # Modul-Initializer
 │   └── utilities.py         # ML-spezifische Utilities
-├── README.md
-├── requirements.txt
-└── setup.py
+├── .gitignore              # Git ignore-Regeln
+├── .claudeignore           # Claude Code ignore-Regeln
+├── CLAUDE.md               # Claude Code Projektanweisungen
+├── README.md               # Diese Datei
+├── requirements.txt        # Python-Abhängigkeiten
+└── setup.py               # Setup-Konfiguration
 ```
 
 ### Ignorierte Dateien und Verzeichnisse
 
-Die folgenden Dateien und Verzeichnisse werden durch `.gitignore` und `.claudeignore` von der Versionskontrolle ausgeschlossen:
+Die folgenden Dateien und Verzeichnisse werden durch `.gitignore` und `.claudeignore` von der Versionskontrolle und Claude Code ausgeschlossen:
 
-**Python-spezifisch:**
-- `__pycache__/`, `*.pyc` - Python-Bytecode
-- `*.egg-info/`, `.pytest_cache/` - Build- und Test-Artefakte
+**Python-Build-Artefakte:**
+- `__pycache__/`, `*.pyc` - Python-Bytecode-Dateien
+- `*.egg-info/` - Python-Paket-Metadaten
+- `.pytest_cache/` - Test-Cache
 - `.ipynb_checkpoints/` - Jupyter Notebook Checkpoints
-- `.venv/`, `venv/` - Virtuelle Umgebungen
+
+**Entwicklungsumgebung:**
+- `.venv/`, `venv/` - Virtuelle Python-Umgebungen
+- `.obsidian/` - Obsidian-Notizen-Konfiguration
 
 **Projektspezifisch:**
-- `_misc/` - Verschiedene Hilfsdateien
-- `.tmp.drivedownload`, `.tmp.driveupload` - Temporäre Drive-Dateien
-- `*.pptx`, `*.png`, `*.jpeg` - Präsentationen und Bilder
-- `.obsidian/` - Obsidian-Notizen
-- `CLAUDE.md` - Claude Code Projektanweisungen
+- `_misc/` - Verschiedene Hilfsdateien und temporäre Dateien
+- `.tmp.drivedownload`, `.tmp.driveupload` - Temporäre Google Drive Dateien
+- `*.pptx`, `*.png`, `*.jpeg` - Binäre Präsentations- und Bilddateien
+
+**Konfiguration und Dokumentation:**
+- `.gitignore`, `.claudeignore` - Ignore-Konfigurationen selbst
+- `CLAUDE.md` - Claude Code Projektanweisungen (nur für Claude Code sichtbar)
 
 ## 8. 📄 Lizenz
 
