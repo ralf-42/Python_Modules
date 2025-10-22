@@ -4,7 +4,7 @@ Multimodales RAG Modul mit Bildbeschreibungen (Version 3)
 
 Verwendung:
     # System initialisieren
-    rag = init_rag_system_enhanced()
+    rag = init_rag_system()
 
     # Verzeichnis verarbeiten
     process_directory(rag, './files', auto_describe_images=True)
@@ -76,7 +76,7 @@ class RAGComponents:
 # SYSTEM-INITIALISIERUNG
 # ============================================================================
 
-def init_rag_system_enhanced(config=None):
+def init_rag_system(config=None):
     """
     Initialisiert das vollständige RAG-System mit Vision-LLM
 
