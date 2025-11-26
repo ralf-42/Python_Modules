@@ -1,0 +1,16 @@
+# audio_lib - Abhängigkeiten
+
+# OpenAI SDK für Whisper (STT) und TTS
+openai>=1.0.0
+
+# Audio-Verarbeitung
+pydub>=0.25.0
+
+# Wissenschaftliche Bibliotheken (für scipy.io.wavfile)
+scipy>=1.10.0
+
+# Hinweis: pydub benötigt ffmpeg
+# Installation von ffmpeg:
+# - Ubuntu/Debian: sudo apt-get install ffmpeg
+# - macOS: brew install ffmpeg
+# - Windows: Download von https://ffmpeg.org/download.html

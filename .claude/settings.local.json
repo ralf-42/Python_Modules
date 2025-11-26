@@ -3,7 +3,8 @@
     "allow": [
       "WebSearch",
       "WebFetch(domain:docs.llamaindex.ai)",
-      "WebFetch(domain:developers.llamaindex.ai)"
+      "WebFetch(domain:developers.llamaindex.ai)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
